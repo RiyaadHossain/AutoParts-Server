@@ -94,11 +94,11 @@ async function run() {
     });
 
     // PUT API - User
-    app.put("/user/:id", async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: ObjectId(id) };
+    app.put("/user", async (req, res) => {
+      const email = req.query.email;
+      const filter = {email: email}
       const user = req.body;
-      console.log(user);
+      console.log(filter);
       const options = { upsert: true };
       const updatedUser = {
         $set: user,
