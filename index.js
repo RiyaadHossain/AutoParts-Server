@@ -80,25 +80,17 @@ async function run() {
     /* ================================================= Users Start ================================================= */
     // GET API - Users
     app.get("/user", async (req, res) => {
-      const email = req.headers.email;
+      const email = req.query.email;
       const filter = { email: email };
-      const result = usersCollection.findOne(filter);
-      res.send(result);
-    });
-
-    // POST API - User
-    app.post("/user", async (req, res) => {
-      const userInfo = req.body;
-      const result = usersCollection.insertOne(userInfo);
+      const result = await usersCollection.findOne(filter);
       res.send(result);
     });
 
     // PUT API - User
     app.put("/user", async (req, res) => {
       const email = req.query.email;
-      const filter = {email: email}
+      const filter = { email: email };
       const user = req.body;
-      console.log(filter);
       const options = { upsert: true };
       const updatedUser = {
         $set: user,
