@@ -171,7 +171,14 @@ async function run() {
     app.get("/user", verifyToken, async (req, res) => {
       const email = req.query.email;
       const filter = { email: email };
+      console.log(filter);
       const result = await usersCollection.findOne(filter);
+      res.send(result);
+    });
+
+    // GET API - Users (Without Fitlering)
+    app.get("/make-user", verifyToken, async (req, res) => {
+      const result = await usersCollection.find().toArray();
       res.send(result);
     });
 
@@ -180,6 +187,7 @@ async function run() {
       const email = req.query.email;
       const filter = { email: email };
       const user = req.body;
+      console.log(user);
       const options = { upsert: true };
       const updatedUser = {
         $set: user,
