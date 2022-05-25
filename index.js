@@ -51,6 +51,21 @@ async function run() {
     const usersCollection = client.db("AutoParts").collection("users");
     const reviewsCollection = client.db("AutoParts").collection("reviews");
 
+    /* ================================================= Middlewares: Verify Admin Start ================================================= */
+    // Middlewares - to Verify Admin
+    const verifyAdmin = async (req, res, next) => {
+      const requester = req.decoded.email;
+      const requesterUser = await usersCollection.findOne({
+        email: requester,
+      });
+      if (requesterUser.role === "admin") {
+        next();
+      } else {
+        res.status(401).send({ message: "Forbidden Request" });
+      }
+    };
+    /* ================================================= Middlewares: Verify Admin ^ ================================================= */
+
     /* ================================================= Generate JWT Token Start ================================================= */
     // PUT API - Generate JWT Token
     app.put("/user/:email", async (req, res) => {
@@ -70,6 +85,33 @@ async function run() {
       res.send({ result, token });
     });
     /* ================================================= Generate JWT Token ^ ================================================= */
+
+    /* ================================================= Use Admin Start ================================================= */
+    // Get API - useAdmin [hook]
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await usersCollection.findOne({ email: email });
+      const isAdmin = user?.role === "admin";
+      res.send({ admin: isAdmin });
+    });
+
+    // Validation For Make Admin
+    app.put(
+      "/users/admin/:email",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const email = req.params.email;
+        const filter = { email: email };
+
+        const updatedDoc = {
+          $set: { role: "admin" },
+        };
+        const result = await usersCollection.updateOne(filter, updatedDoc);
+        res.send(result);
+      }
+    );
+    /* ================================================= Use Admin ^ ================================================= */
 
     /* ================================================= Auto Parts Start ================================================= */
     // GET API - AutoParts
@@ -101,7 +143,7 @@ async function run() {
 
     /* ================================================= Orders Start ================================================= */
     // GET API - Order
-    app.get("/order", verifyToken, async (req, res) => {
+    app.get("/order", async (req, res) => {
       const email = req.headers.email;
       const filter = { email: email };
       const result = await ordersCollection.find(filter).toArray();
@@ -109,7 +151,7 @@ async function run() {
     });
 
     // POST API - Order
-    app.post("/order", verifyToken, async (req, res) => { 
+    app.post("/order", verifyToken, async (req, res) => {
       const part = req.body;
       const result = await ordersCollection.insertOne(part);
       res.send(result);
