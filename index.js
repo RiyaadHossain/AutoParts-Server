@@ -4,9 +4,10 @@ const {
   ObjectId,
   LEGAL_TCP_SOCKET_OPTIONS,
 } = require("mongodb");
+const { response } = require("express");
+const jwt = require("jsonwebtoken");
 const express = require("express");
 const cors = require("cors");
-const { response } = require("express");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -23,6 +24,24 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+/* ================================================= Middlewares: Verify JWT Token ================================================= */
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "UnAuthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+
+    next();
+  });
+};
+/* ================================================= Middlewares: Verify JWT Token ^ ================================================= */
+
 // Run function - GET, POST, DELETE, PUT
 async function run() {
   try {
@@ -31,6 +50,26 @@ async function run() {
     const ordersCollection = client.db("AutoParts").collection("orders");
     const usersCollection = client.db("AutoParts").collection("users");
     const reviewsCollection = client.db("AutoParts").collection("reviews");
+
+    /* ================================================= Generate JWT Token Start ================================================= */
+    // PUT API - Generate JWT Token
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: user,
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN);
+      res.send({ result, token });
+    });
+    /* ================================================= Generate JWT Token ^ ================================================= */
 
     /* ================================================= Auto Parts Start ================================================= */
     // GET API - AutoParts
@@ -62,7 +101,7 @@ async function run() {
 
     /* ================================================= Orders Start ================================================= */
     // GET API - Order
-    app.get("/order", async (req, res) => {
+    app.get("/order", verifyToken, async (req, res) => {
       const email = req.headers.email;
       const filter = { email: email };
       const result = await ordersCollection.find(filter).toArray();
@@ -70,16 +109,16 @@ async function run() {
     });
 
     // POST API - Order
-    app.post("/order", async (req, res) => {
+    app.post("/order", verifyToken, async (req, res) => { 
       const part = req.body;
       const result = await ordersCollection.insertOne(part);
       res.send(result);
     });
 
     // DELETE API - Order
-    app.delete("/order/:id", async (req, res) => {
-      const id = req.params.id
-      const filter = {_id: ObjectId(id)}
+    app.delete("/order/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
       const result = await ordersCollection.deleteOne(filter);
       res.send(result);
     });
@@ -87,7 +126,7 @@ async function run() {
 
     /* ================================================= Users Start ================================================= */
     // GET API - Users
-    app.get("/user", async (req, res) => {
+    app.get("/user", verifyToken, async (req, res) => {
       const email = req.query.email;
       const filter = { email: email };
       const result = await usersCollection.findOne(filter);
@@ -95,7 +134,7 @@ async function run() {
     });
 
     // PUT API - User
-    app.put("/user", async (req, res) => {
+    app.put("/user", verifyToken, async (req, res) => {
       const email = req.query.email;
       const filter = { email: email };
       const user = req.body;
