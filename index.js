@@ -135,6 +135,14 @@ async function run() {
       res.send(result)
     })
 
+    // DELETE API - AutoPart
+    app.delete("/part/:id", verifyToken, verifyAdmin, async(req, res)=>{
+      const id = req.params.id
+      const filter = {_id: ObjectId(id)}
+      const result = await partsCollection.deleteOne(filter)
+      res.send(result)
+    })
+
     // PUT API - Part
     app.put("/part/:id", async (req, res) => {
       const id = req.params.id;
