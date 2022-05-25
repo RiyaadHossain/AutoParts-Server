@@ -75,6 +75,14 @@ async function run() {
       const result = await ordersCollection.insertOne(part);
       res.send(result);
     });
+
+    // DELETE API - Order
+    app.delete("/order/:id", async (req, res) => {
+      const id = req.params.id
+      const filter = {_id: ObjectId(id)}
+      const result = await ordersCollection.deleteOne(filter);
+      res.send(result);
+    });
     /* ================================================= Orders ^ ================================================= */
 
     /* ================================================= Users Start ================================================= */
@@ -110,7 +118,6 @@ async function run() {
     // POST API - Review
     app.post("/review", async (req, res) => {
       const review = req.body;
-      console.log(review);
       const result = await reviewsCollection.insertOne(review);
       res.send(result);
     });
