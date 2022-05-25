@@ -128,6 +128,13 @@ async function run() {
       res.send(result);
     });
 
+    // POST API - AutoPart
+    app.post("/part",verifyToken, verifyAdmin, async(req, res)=>{
+      const itemInfo = req.body
+      const result = await partsCollection.insertOne(itemInfo)
+      res.send(result)
+    })
+
     // PUT API - Part
     app.put("/part/:id", async (req, res) => {
       const id = req.params.id;
@@ -171,7 +178,6 @@ async function run() {
     app.get("/user", verifyToken, async (req, res) => {
       const email = req.query.email;
       const filter = { email: email };
-      console.log(filter);
       const result = await usersCollection.findOne(filter);
       res.send(result);
     });
@@ -187,7 +193,6 @@ async function run() {
       const email = req.query.email;
       const filter = { email: email };
       const user = req.body;
-      console.log(user);
       const options = { upsert: true };
       const updatedUser = {
         $set: user,
