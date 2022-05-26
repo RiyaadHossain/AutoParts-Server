@@ -4,6 +4,9 @@ const {
   ObjectId,
   LEGAL_TCP_SOCKET_OPTIONS,
 } = require("mongodb");
+const stripe = require("stripe")(
+  "sk_test_51L1q4EFo6wW3RMmqIBnUhrkLPQsoozQMDE3cZZXVqHyAg84zvJMXEtQ9jTK5qoBnuh05Chhz0qiy6OlgaqcqgHyH00XpQdXswi"
+);
 const { response } = require("express");
 const jwt = require("jsonwebtoken");
 const express = require("express");
@@ -50,6 +53,22 @@ async function run() {
     const ordersCollection = client.db("AutoParts").collection("orders");
     const usersCollection = client.db("AutoParts").collection("users");
     const reviewsCollection = client.db("AutoParts").collection("reviews");
+
+    /* ================================================= Payment Intent ================================================= */
+    app.post("/create-payment-intent", verifyToken, async (req, res) => {
+      const price = req.body.price;
+      const amount = price * 100;
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "eur",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+    /* ================================================= Payment Intent ^ ================================================= */
 
     /* ================================================= Middlewares: Verify Admin Start ================================================= */
     // Middlewares - to Verify Admin
@@ -166,6 +185,12 @@ async function run() {
     });
 
     // GET API - Orders
+    app.get("/admin-order", verifyToken, async (req, res) => {
+      const result = await ordersCollection.find().toArray()
+      res.send(result);
+    });
+
+    // GET API - Orders
     app.get("/order", verifyToken, async (req, res) => {
       const email = req.headers.email;
       const filter = { email: email };
@@ -185,6 +210,19 @@ async function run() {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const result = await ordersCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    // PUT API - Order
+    app.put("/order/:id", async (req, res) => {
+      const id = req.params.id;
+      const payInfo = req.body;
+      const filter = { _id: ObjectId(id) };
+      console.log(payInfo)
+      const updatedDoc = {
+        $set: payInfo,
+      };
+      const result = await ordersCollection.updateOne(filter, updatedDoc);
       res.send(result);
     });
     /* ================================================= Orders ^ ================================================= */
