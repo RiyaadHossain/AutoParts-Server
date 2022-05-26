@@ -129,19 +129,19 @@ async function run() {
     });
 
     // POST API - AutoPart
-    app.post("/part",verifyToken, verifyAdmin, async(req, res)=>{
-      const itemInfo = req.body
-      const result = await partsCollection.insertOne(itemInfo)
-      res.send(result)
-    })
+    app.post("/part", verifyToken, verifyAdmin, async (req, res) => {
+      const itemInfo = req.body;
+      const result = await partsCollection.insertOne(itemInfo);
+      res.send(result);
+    });
 
     // DELETE API - AutoPart
-    app.delete("/part/:id", verifyToken, verifyAdmin, async(req, res)=>{
-      const id = req.params.id
-      const filter = {_id: ObjectId(id)}
-      const result = await partsCollection.deleteOne(filter)
-      res.send(result)
-    })
+    app.delete("/part/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await partsCollection.deleteOne(filter);
+      res.send(result);
+    });
 
     // PUT API - Part
     app.put("/part/:id", async (req, res) => {
@@ -158,6 +158,14 @@ async function run() {
 
     /* ================================================= Orders Start ================================================= */
     // GET API - Order
+    app.get("/order/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await ordersCollection.findOne(filter);
+      res.send(result);
+    });
+
+    // GET API - Orders
     app.get("/order", async (req, res) => {
       const email = req.headers.email;
       const filter = { email: email };
