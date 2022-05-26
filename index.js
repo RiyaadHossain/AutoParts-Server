@@ -158,7 +158,7 @@ async function run() {
 
     /* ================================================= Orders Start ================================================= */
     // GET API - Order
-    app.get("/order/:id", async (req, res) => {
+    app.get("/order/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const result = await ordersCollection.findOne(filter);
@@ -166,7 +166,7 @@ async function run() {
     });
 
     // GET API - Orders
-    app.get("/order", async (req, res) => {
+    app.get("/order", verifyToken, async (req, res) => {
       const email = req.headers.email;
       const filter = { email: email };
       const result = await ordersCollection.find(filter).toArray();
